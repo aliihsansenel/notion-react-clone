@@ -25,8 +25,16 @@
     outline: none;
     margin-top: 4em;
 }
-.note-editor pre.note-block {
+.note-editor .note-block {
     margin: 0;
+    outline: 1px solid black;
+    
+    white-space: normal;
+    
+}
+.note-editor .child-block {
+    margin: 0;
+    margin-left: 2em;
     outline: 1px solid black;
     
     white-space: normal;

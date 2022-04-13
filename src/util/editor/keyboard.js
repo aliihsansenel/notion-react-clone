@@ -13,6 +13,12 @@ export function keyDownEnter(element, event) {
     return content;
 }
 
+export function keyDownTab(element, event) {
+    event.preventDefault();
+
+    return 'end';
+}
+
 export function keyDownBackspace(element, event) {
 
     if (isCaretAtStart(element)) {
@@ -30,9 +36,9 @@ export function keyDownBackspace(element, event) {
 
 export function keyDownArrow(element, dir) {
     
-    if(dir === 'left' && isCaretAtStart(element)) {
+    if(dir === 'prev' && isCaretAtStart(element)) {
         return dir;
-    } else if (dir === 'right' && isCaretAtEnd(element)) {
+    } else if (dir === 'next' && isCaretAtEnd(element)) {
         return dir;
     }
     return null;

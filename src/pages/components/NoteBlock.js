@@ -1,64 +1,64 @@
+import React, { useRef, useState, useEffect, useContext } from 'react';
+
 import TextLine from 'components/noteBlock/TextLine';
-import React, { useRef, useState, useEffect } from 'react';
 
+import { NoteContext } from './NoteEditor';
+import BlockSelector from 'components/noteBlock/BlockSelector';
+import { addBlock, blockSelfFocus } from 'actions/editorActions';
 
-function NoteBlock({ id, activeBlock, handlers }) {
+function NoteBlock({ id, handlers }) {
 
+    const [notes, setNotes] = useContext(NoteContext);
+    const block = notes.blocks.byId[id];
+
+    const activeBlock = notes.activeBlock;
     let elementRef = useRef();
 
+    function blurHandler(html) {
+        handlers.blurHandler(id, html);
+    }
+
     function focusHandler(event) {
-        if (activeBlock.blockId !== id) {
-            handlers.navHandler(id, 'self');
-        }
+        if (activeBlock.blockId === id) return;
+        if (event.target.closest('.note-block') !== elementRef.current) return;
+        setNotes((notes) => { return blockSelfFocus(notes, id) });
     }
     function navHandler(dir) {
-        dir = dir === 'left' ? 'up' : dir === 'right' ? 'down' : 'self';
         handlers.navHandler(id, dir);
     }
-    function newRowHandler(payload) {
-        handlers.newRowHandler(id, payload);
+    function newLineHandler(payload) {
+        if (activeBlock.blockId !== id) return;
+        handlers.newLineHandler(id, payload);
     }
-    function deleteRowHandler(payload, dir) {
-        handlers.deleteRowHandler(id, payload, dir);
+    function indendationHandler(dir) {
+        handlers.indendationHandler(id, dir);
     }
-    useEffect(() => {
-        if (activeBlock.blockId === id && activeBlock.selfFocus === false) {
-            const element = elementRef.current;
-            const textElement = element.querySelector('.text-line');
-            textElement.focus();
-            const range = document.createRange();
-            range.selectNodeContents(textElement);
-            const payload = activeBlock.payload;
-            if (payload !== null) {
-                
-                if (activeBlock.pos === true) {
-                    range.collapse(true);
-                    range.insertNode(payload);
-                    range.collapse(true);
-                } else {
-                    range.collapse(false);
-                    range.insertNode(payload);
-                    range.collapse(true);
-                    const sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                }
-            } else {
-                range.collapse(activeBlock.pos);
-                const sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
-        }
-    }, [activeBlock.blockId]);
+    function deleteHandler(payload, dir) {
+        handlers.deleteHandler(id, payload, dir);
+    }
+    
 
     return (
-        <pre className='note-block' ref={elementRef} onFocus={focusHandler}>
-            <TextLine clasName='text-line'
-                placeholder={"Type '/' for commands"}
-                handlers={{focusHandler, navHandler, newRowHandler, deleteRowHandler}}
-            />
-        </pre>
+        <div className='note-block' ref={elementRef} onFocus={focusHandler}>
+            <BlockSelector 
+                type={block.type}
+                hasFocus={activeBlock.blockId === id && activeBlock.selfFocus === false}
+                activeBlock={activeBlock.blockId === id && notes.activeBlock ? notes.activeBlock: null}
+                html={block.html}
+                handlers={{ blurHandler, focusHandler, navHandler, newLineHandler, indendationHandler, deleteHandler }} />
+            { block.children?.length > 0 && 
+                (<div className='child-block'>
+                    {
+                        block.children.map((blockId) => {
+                        return <NoteBlock key={blockId}
+                            parentId={id}
+                            id={blockId}
+                            handlers={handlers}
+                             />})
+                    }
+                </div>)
+            }
+        </div>
     )
 }
 

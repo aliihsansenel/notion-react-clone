@@ -1,8 +1,14 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useContext } from 'react';
 
 import { keyDownEnter, keyDownArrow } from "util/editor/keyboard";
 
-function NoteTitle({ activeBlock, handlers }) {
+import { NoteContext } from './NoteEditor';
+
+function NoteTitle({ handlers }) {
+
+    const [notes, setNotes] = useContext(NoteContext);
+    const activeBlock = notes.activeBlock;
+    
     let elementRef = useRef();
 
     function focusHandler(event) {
@@ -19,7 +25,7 @@ function NoteTitle({ activeBlock, handlers }) {
                 payload = keyDownEnter(element, event);           
                 handlers.newRowHandler(0, payload);                    break;
             case 'ArrowRight':
-                dir = keyDownArrow(element, 'right');
+                dir = keyDownArrow(element, 'next');
                 if (dir === null) break;
                 handlers.navHandler(0, dir);                           break;
             default: break;

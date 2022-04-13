@@ -1,78 +1,102 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, createContext } from 'react';
 
 import NoteTitle from './NoteTitle';
 import NoteBlock from './NoteBlock';
 
+import { registerHTML, addBlock, blockSelfFocus, moveBlock, deleteBackward, adjacentSiblings } from 'actions/editorActions';
+
+export const NoteContext = createContext();
+
+const initialBlocks = {
+    byId: {
+        0: {
+            id: 0,
+            type: 'title',
+            html: '',
+            parentId: null,
+            children: []
+        },
+        1: {
+            id: 1,
+            type: 'plain',
+            html: '',
+            parentId: null,
+            children: [2]
+        },
+        2: {
+            id: 2,
+            type:
+            'plain', 
+            html: '',
+            parentId: 1,
+            children: []
+        },
+        3: {
+            id: 3,
+            type: 'plain',
+            html: '',
+            parentId: null,
+            children: []
+        }
+    },
+    allIds: []
+};
+
 function NoteEditor() {
     const [notes, setNotes] = useState({
-        bodyBlocks: [0, 1, 2],
+        blocks: {...initialBlocks},
+        bodyBlocks: [0, 1, 3],
         activeBlock: {
             blockId: 1, selfFocus: false, pos: true, payload: null,
-        }
+        },
+        blockIdCounter: 3
     });
-
-    const blockIdCounter = useRef(3);
-
+    function blurHandler(blockId, html) {
+        setNotes((notes) => {
+            return registerHTML(notes, blockId, html);
+        });
+    }
     function navHandler(blockId, dir) {
-        dir = dir === 'self' ? 0 : dir === 'up' ? -1 : 1;
+
+        if(dir === 'self')
+            setNotes((notes) => { return blockSelfFocus(notes, blockId)});
+    }
+    function newLineHandler(blockId, payload) {
         setNotes((notes) => {
-            const bodyBlocks = [...notes.bodyBlocks];
-            const activeBlock = { ...notes.activeBlock };
+            return addBlock(notes, blockId, payload);
+        });
+    }
+    function indendationHandler(blockId, dir){
+        if (dir === 'end') {
+            const prevSibling = adjacentSiblings(notes, blockId).previousSibling;
 
-            const index = bodyBlocks.indexOf(blockId);
-
-            let targetBlockIndex = index + dir;
-            if (targetBlockIndex < 0 || targetBlockIndex > bodyBlocks.length - 1 || activeBlock.blockId === bodyBlocks[targetBlockIndex])
-                return { ...notes, bodyBlocks, 'activeBlock': {...activeBlock, payload: null } };
+            if (prevSibling === null || prevSibling.id === 0) return;
             
-                const selfFocus = dir ? false : true;
-            let pos = false;
-            if (dir >= 1) {
-                pos = true;
-            }
-            return { ...notes, bodyBlocks, 'activeBlock': {...activeBlock, blockId: bodyBlocks[targetBlockIndex], selfFocus, pos, payload: null } };
-        });
+            setNotes((notes) => { return moveBlock(notes, blockId, prevSibling.id, -1)});
+        }
     }
-    function deleteRowHandler(blockId, payload, dir) {
-        setNotes((notes) => {
-            const bodyBlocks = [...notes.bodyBlocks];
-            const activeBlock = { ...notes.activeBlock };
-
-            const index = bodyBlocks.indexOf(blockId);
-            let targetBlockIndex = dir === 'up' ? index - 1 : index;
-            if (targetBlockIndex < 0)
-                return { ...notes, bodyBlocks, 'activeBlock': {...activeBlock, blockId: bodyBlocks[0], selfFocus: false, pos: true, payload: null } };
-            
-            let pos = false;
-            if (dir === 'up') {
-                bodyBlocks.splice(index, 1);
-            }
-            else if (dir === 'down' && bodyBlocks[index + 1]) {
-                bodyBlocks.splice(index + 1, 1);
-            }
-            return { ...notes, bodyBlocks, 'activeBlock': {...activeBlock, blockId: bodyBlocks[targetBlockIndex], selfFocus: false, pos, payload } };
-        });
+    function deleteHandler(blockId, payload, dir) {
+        if (dir === 'prev' && notes.bodyBlocks[1] !== blockId) {
+            setNotes((notes) => { return deleteBackward(notes, blockId, payload)});
+        }
     }
-    function newRowHandler(blockId, payload) {
-        setNotes((notes) => {
-            const bodyBlocks = [...notes.bodyBlocks];
-            const activeBlock = { ...notes.activeBlock };
-
-            const index = bodyBlocks.indexOf(blockId);
-
-            bodyBlocks.splice(index + 1, 0, blockIdCounter.current++);
-            return { ...notes, bodyBlocks, 'activeBlock': {...activeBlock, blockId: bodyBlocks[index + 1], selfFocus: false, pos:true, payload } };
-        });
-    }
+    
     return (
-        <div  className='note-editor'  >
-            <NoteTitle activeBlock={notes.activeBlock} handlers={{navHandler, deleteRowHandler, newRowHandler}}/>
-            {
-                notes.bodyBlocks.slice(1).map((blockId) => {
-                    return <NoteBlock key={blockId} id={blockId} activeBlock={notes.activeBlock} handlers={{navHandler, deleteRowHandler, newRowHandler}} />
-                })
-            }
-        </div>
+        <NoteContext.Provider value={[notes, setNotes]}>
+            <div className='note-editor'>
+                <NoteTitle
+                    handlers={{navHandler, deleteHandler }}
+                />
+                {
+                    notes.bodyBlocks.slice(1).map((blockId) => {
+                        return <NoteBlock key={blockId}
+                            parentId={null}
+                            id={blockId}
+                            handlers={{blurHandler, navHandler, newLineHandler, indendationHandler, deleteHandler }} />
+                    })
+                }
+            </div>
+        </NoteContext.Provider>
     )
 }
 
