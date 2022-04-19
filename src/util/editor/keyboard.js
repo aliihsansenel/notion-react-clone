@@ -15,7 +15,7 @@ export function keyDownEnter(element, event) {
 
 export function keyDownTab(element, event) {
     event.preventDefault();
-
+    if(event.shiftKey) return 'start';
     return 'end';
 }
 

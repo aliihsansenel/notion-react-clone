@@ -25,8 +25,8 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
             case 'Tab':
                 dir = keyDownTab(element, event);
                 if (dir === null) break;
-                handlers.blurHandler(elementRef.current.innerHTML);
-                handlers.indendationHandler(dir);                   break;
+                // handlers.blurHandler(elementRef.current.innerHTML);
+                handlers.indentationHandler(dir);                   break;
             case 'ArrowLeft':
                 dir = keyDownArrow(element, 'prev');
                 if (dir === null) break;

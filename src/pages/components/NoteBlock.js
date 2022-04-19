@@ -4,12 +4,15 @@ import TextLine from 'components/noteBlock/TextLine';
 
 import { NoteContext } from './NoteEditor';
 import BlockSelector from 'components/noteBlock/BlockSelector';
-import { addBlock, blockSelfFocus } from 'actions/editorActions';
+import { addBlockAfter, blockSelfFocus } from 'actions/editorActions';
 
-function NoteBlock({ id, handlers }) {
+function NoteBlock({ id }) {
 
-    const [notes, setNotes] = useContext(NoteContext);
-    const block = notes.blocks.byId[id];
+    const { noteState, handlers} = useContext(NoteContext);
+    const [notes, setNotes] = noteState;
+
+    const block = notes.blocks[id];
+    const content = notes.blockContents[id];
 
     const activeBlock = notes.activeBlock;
     let elementRef = useRef();
@@ -28,36 +31,25 @@ function NoteBlock({ id, handlers }) {
     }
     function newLineHandler(payload) {
         if (activeBlock.blockId !== id) return;
+        console.log('blockId', id);
         handlers.newLineHandler(id, payload);
     }
-    function indendationHandler(dir) {
-        handlers.indendationHandler(id, dir);
+    function indentationHandler(dir) {
+        handlers.indentationHandler(id, dir);
     }
     function deleteHandler(payload, dir) {
         handlers.deleteHandler(id, payload, dir);
     }
     
-
+    const localHandlers = { blurHandler, focusHandler, navHandler, newLineHandler, indentationHandler, deleteHandler };
     return (
-        <div className='note-block' ref={elementRef} onFocus={focusHandler}>
+        <div className='note-block' ref={elementRef} onFocus={focusHandler} style={{marginLeft: `${block.level * 2}em`}}>
             <BlockSelector 
                 type={block.type}
                 hasFocus={activeBlock.blockId === id && activeBlock.selfFocus === false}
-                activeBlock={activeBlock.blockId === id && notes.activeBlock ? notes.activeBlock: null}
-                html={block.html}
-                handlers={{ blurHandler, focusHandler, navHandler, newLineHandler, indendationHandler, deleteHandler }} />
-            { block.children?.length > 0 && 
-                (<div className='child-block'>
-                    {
-                        block.children.map((blockId) => {
-                        return <NoteBlock key={blockId}
-                            parentId={id}
-                            id={blockId}
-                            handlers={handlers}
-                             />})
-                    }
-                </div>)
-            }
+                activeBlock={(activeBlock.blockId === id && notes.activeBlock) ? notes.activeBlock: null}
+                html={content}
+                handlers={localHandlers} />
         </div>
     )
 }

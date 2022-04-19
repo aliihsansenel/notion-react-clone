@@ -3,49 +3,35 @@ import React, { useState, useRef, useEffect, createContext } from 'react';
 import NoteTitle from './NoteTitle';
 import NoteBlock from './NoteBlock';
 
-import { registerHTML, addBlock, blockSelfFocus, moveBlock, deleteBackward, adjacentSiblings } from 'actions/editorActions';
+import { registerContent, addBlockAfter, blockSelfFocus, indentBlock, unindentBlock, deleteBackward, adjacentSiblings } from 'actions/editorActions';
 
 export const NoteContext = createContext();
 
 const initialBlocks = {
-    byId: {
-        0: {
-            id: 0,
-            type: 'title',
-            html: '',
-            parentId: null,
-            children: []
-        },
-        1: {
-            id: 1,
-            type: 'plain',
-            html: '',
-            parentId: null,
-            children: [2]
-        },
-        2: {
-            id: 2,
-            type:
-            'plain', 
-            html: '',
-            parentId: 1,
-            children: []
-        },
-        3: {
-            id: 3,
-            type: 'plain',
-            html: '',
-            parentId: null,
-            children: []
-        }
+    1: {
+        id: 1,
+        type: 'plain',
+        level: 0,
     },
-    allIds: []
+    2: {
+        id: 2,
+        type: 'plain',
+        level: 1,
+    },
+    3: {
+        id: 3,
+        type: 'plain',
+        level: 0,
+    }
 };
+
 
 function NoteEditor() {
     const [notes, setNotes] = useState({
+        title: '',
         blocks: {...initialBlocks},
-        bodyBlocks: [0, 1, 3],
+        blockContents: { 1: '', 2: '', 3: ''},
+        bodyBlocks: [ 1, 2, 3 ],
         activeBlock: {
             blockId: 1, selfFocus: false, pos: true, payload: null,
         },
@@ -53,7 +39,7 @@ function NoteEditor() {
     });
     function blurHandler(blockId, html) {
         setNotes((notes) => {
-            return registerHTML(notes, blockId, html);
+            return registerContent(notes, blockId, html);
         });
     }
     function navHandler(blockId, dir) {
@@ -63,36 +49,28 @@ function NoteEditor() {
     }
     function newLineHandler(blockId, payload) {
         setNotes((notes) => {
-            return addBlock(notes, blockId, payload);
+            return addBlockAfter(notes, blockId, payload);
         });
     }
-    function indendationHandler(blockId, dir){
-        if (dir === 'end') {
-            const prevSibling = adjacentSiblings(notes, blockId).previousSibling;
-
-            if (prevSibling === null || prevSibling.id === 0) return;
-            
-            setNotes((notes) => { return moveBlock(notes, blockId, prevSibling.id, -1)});
-        }
+    function indentationHandler(blockId, dir){
+        if (dir === 'end')
+            setNotes((notes) => { return indentBlock(notes, blockId)});
+        else
+            setNotes((notes) => { return unindentBlock(notes, blockId)});
     }
     function deleteHandler(blockId, payload, dir) {
         if (dir === 'prev' && notes.bodyBlocks[1] !== blockId) {
             setNotes((notes) => { return deleteBackward(notes, blockId, payload)});
         }
     }
-    
+    const handlers = { blurHandler, navHandler, newLineHandler, indentationHandler, deleteHandler };
     return (
-        <NoteContext.Provider value={[notes, setNotes]}>
+        <NoteContext.Provider value={{ noteState: [notes, setNotes], handlers }}>
             <div className='note-editor'>
-                <NoteTitle
-                    handlers={{navHandler, deleteHandler }}
-                />
+                <NoteTitle />
                 {
-                    notes.bodyBlocks.slice(1).map((blockId) => {
-                        return <NoteBlock key={blockId}
-                            parentId={null}
-                            id={blockId}
-                            handlers={{blurHandler, navHandler, newLineHandler, indendationHandler, deleteHandler }} />
+                    notes.bodyBlocks.map((blockId) => {
+                        return <NoteBlock id={blockId} key={blockId} />;
                     })
                 }
             </div>

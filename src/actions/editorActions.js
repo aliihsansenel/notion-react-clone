@@ -1,12 +1,15 @@
-export function registerHTML(prevNotes, blockId, html) {
-    const notes = JSON.parse(JSON.stringify(prevNotes));
-
-    const thisBlock = notes.blocks.byId[blockId];
-    thisBlock.html = html;
-    
-    notes.activeBlock.payload = null;
-    return notes;
+// TODO comment
+export function registerContent(notes, blockId, content) {
+    return { ...notes,
+        'blockContents': {...notes.blockContents,
+            [blockId]: content
+        },
+        'activeBlock': {...notes.activeBlock,
+            payload: null 
+    } };
 }
+
+// TODO comment
 export function blockSelfFocus(notes, blockId) {
     const activeBlock = { ...notes.activeBlock };
     
@@ -15,9 +18,8 @@ export function blockSelfFocus(notes, blockId) {
         'activeBlock': {...activeBlock,
             payload: null
         } };
-        
-    const bodyBlocks = [...notes.bodyBlocks];
-    return { ...notes, bodyBlocks,
+    
+    return { ...notes,
         'activeBlock': {...activeBlock,
             blockId,
             selfFocus: true,
@@ -25,37 +27,29 @@ export function blockSelfFocus(notes, blockId) {
             payload: null 
     } };
 }
-export function focusNextBlock(notes, blockId) {
 
-    // return { ...notes, bodyBlocks,
-    //     'activeBlock': {...activeBlock,
-    //         blockId: bodyBlocks[targetBlockIndex],
-    //         selfFocus: false,
-    //         pos: true,
-    //         payload: null 
-    // } };
-}
-export function addBlock(prevNotes, blockId, payload) {
-    const notes = JSON.parse(JSON.stringify(prevNotes));    
-    const blocks = notes.blocks;
+// TODO comment
+export function addBlockAfter(notes, blockId, payload) {
 
-    const siblings = siblingsArray(notes, blockId);
-    const index = siblings.indexOf(blockId);
+    const blocks = {...notes.blocks};
+    const bodyBlocks = [...notes.bodyBlocks];
+    const blockContents = {...notes.blockContents};
+
+    const index = bodyBlocks.indexOf(blockId);
     const newId = notes.blockIdCounter + 1;
-    siblings.splice(index + 1, 0, newId);
+    bodyBlocks.splice(index + 1, 0, newId);
     
-    const thisBlock = blocks.byId[blockId];
-    blocks.byId[newId] = {
+    const thisBlock = blocks[blockId];
+    blocks[newId] = {
         id: newId,
         type: thisBlock.type,
-        html: '',
-        parentId: thisBlock.parentId,
-        children: []
+        level: thisBlock.level,
     };
-    
-    const activeBlock = notes.activeBlock;
-    return { ...notes, 
-        'activeBlock': {...activeBlock, 
+    blockContents[newId] = '';
+
+    const activeBlock = {...notes.activeBlock};
+    return  { ...notes, blocks, bodyBlocks, blockContents,
+        'activeBlock': {...activeBlock,
             blockId: newId,
             selfFocus: false,
             pos: true,
@@ -65,41 +59,84 @@ export function addBlock(prevNotes, blockId, payload) {
     };
 }
 
+// TODO comment
+export function indentBlock(notes, blockId) {
+    const blocks = {...notes.blocks};
 
-export function moveBlock(prevNotes, blockId, targetBlockId, targetIndex) {
-    const notes = JSON.parse(JSON.stringify(prevNotes));
+    const prev = previousBlock(notes, blockId);
+    if (prev === null) return notes;
+    
+    const thisBlock = { ...blocks[blockId] };
 
-    const siblings = siblingsArray(notes, blockId);
-    const index = siblings.indexOf(blockId);
-    siblings.splice(index, 1);
+    let targetLevel = thisBlock.level + 1;
+    if (targetLevel > prev.level + 1) targetLevel = prev.level + 1;
+    if (targetLevel === thisBlock.level) return notes;
 
-    const targetArray = targetBlockId === null ? notes.bodyBlocks: notes.blocks.byId[targetBlockId].children;
-    if (targetIndex < 0)
-        targetArray.push(blockId);
-    else
-        targetArray.splice(targetIndex, 0, blockId);
-    const thisBlock = notes.blocks.byId[blockId];
-    thisBlock.parentId = targetBlockId;
-    return { ...notes, 
-        'activeBlock': {...notes.activeBlock,
-            selfFocus: false,
-            payload: null,
-        }
-    };
+    thisBlock.level = targetLevel;
+    return { ...notes, blocks: {...blocks, [blockId]: thisBlock }};
 }
 
-export function deleteBackward(prevNotes, blockId, payload) {
-    const notes = JSON.parse(JSON.stringify(prevNotes));
+// TODO comment
+export function unindentBlock(notes, blockId) {
+    let blocks = {...notes.blocks};
+    const thisBlock = { ...blocks[blockId] };
 
-    const activeBlock = notes.activeBlock;
-    const prevBlock = previousBlock(notes, blockId);
+    let targetLevel = thisBlock.level - 1;
+    if (targetLevel < 0) targetLevel = 0;
+    if (targetLevel === thisBlock.level) return notes;
 
-    const siblings = siblingsArray(notes, blockId);
-    const index = siblings.indexOf(blockId);
-    siblings.splice(index, 1);
-    return { ...notes, 
+    
+    
+    let next = nextBlock(notes, blockId);
+    while(next && next.level > thisBlock.level) {
+        const newNext = { ...blocks[next.id] };
+        newNext.level -= 1;
+        blocks[next.id] = newNext;
+        blocks = {...blocks, [next.id]: newNext };
+        next = nextBlock(notes, next.id);
+    }
+
+    thisBlock.level = targetLevel;
+    return { ...notes, blocks: {...blocks, [blockId]: thisBlock }};
+}
+
+// export function moveBlock(notes, blockId, targetBlockId, targetIndex) {
+//     const blocks = {...notes.blocks};
+//     const bodyBlocks = [...notes.bodyBlocks] ;
+//     const blockContents = {...notes.blockContents};
+
+//     const index = bodyBlocks.indexOf(blockId);
+//     bodyBlocks.splice(index, 1);
+
+//     const targetArray = targetBlockId === null ? notes.bodyBlocks: notes.blocks.byId[targetBlockId].children;
+//     if (targetIndex < 0)
+//         targetArray.push(blockId);
+//     else
+//         targetArray.splice(targetIndex, 0, blockId);
+//     const thisBlock = notes.blocks.byId[blockId];
+//     thisBlock.parentId = targetBlockId;
+//     return { ...notes, 
+//         'activeBlock': {...notes.activeBlock,
+//             selfFocus: false,
+//             payload: null,
+//         }
+//     };
+// }
+
+// TODO comment
+export function deleteBackward(notes, blockId, payload) {
+    const prev = previousBlock(notes, blockId);
+    if (prev === null) return notes;
+
+    const bodyBlocks = [...notes.bodyBlocks];
+    const activeBlock = {...notes.activeBlock};
+    
+    const index = bodyBlocks.indexOf(blockId);
+    bodyBlocks.splice(index, 1);
+
+    return { ...notes, bodyBlocks,
         'activeBlock': {...activeBlock, 
-            blockId: prevBlock.id,
+            blockId: prev.id,
             selfFocus: false,
             pos: false,
             payload 
@@ -111,38 +148,22 @@ export function deleteBackward(prevNotes, blockId, payload) {
 
 // TODO comment.
 export function previousBlock(notes, blockId) {
+    const bodyBlocks = notes.bodyBlocks;
 
-    const blocks = notes.blocks;
-    const thisBlock = blocks.byId[blockId];
-    const adjacents = adjacentSiblings(notes, blockId);
+    const index = bodyBlocks.indexOf(blockId) - 1;
 
-    if (adjacents.previousSibling === null){
-        if (thisBlock.parentId === null)
-            return null;
-        return blocks.byId[thisBlock.parentId];
-    }
-
-    let blockPointer = adjacents.previousSibling;
-    
-    while (blockPointer && blockPointer.children.length > 0) {
-        blockPointer = blocks.byId[blockPointer.children[blockPointer.children.length - 1]];
-    }
-    return blockPointer;
-    
+    if (index < 0) return null;
+    return notes.blocks[bodyBlocks[index]];
 }
 
 // TODO comment.
 export function nextBlock(notes, blockId) {
-    const adjacents = adjacentSiblings(notes, blockId);
+    const bodyBlocks = notes.bodyBlocks;
 
-    let blockPointer = adjacents.nextSibling;
-    while (blockPointer === null) {
-        if (blockPointer.parentId === null)
-            return null;
-        adjacents = adjacentSiblings(notes, blockPointer.parentId);
-        blockPointer = adjacents.nextSibling;
-    }
-    return blockPointer;
+    const index = bodyBlocks.indexOf(blockId) + 1;
+
+    if (index > bodyBlocks.length - 1) return null;
+    return notes.blocks[bodyBlocks[index]];
 }
 
 // TODO comment.
@@ -165,6 +186,7 @@ export function adjacentSiblings(notes, blockId) {
     return adjacents;
 }
 
+// TODO comment
 export function siblingsArray(notes, blockId) {
     const blocks = notes.blocks;
     const thisBlock = blocks.byId[blockId];

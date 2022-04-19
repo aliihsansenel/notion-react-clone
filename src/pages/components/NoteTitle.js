@@ -4,9 +4,11 @@ import { keyDownEnter, keyDownArrow } from "util/editor/keyboard";
 
 import { NoteContext } from './NoteEditor';
 
-function NoteTitle({ handlers }) {
+function NoteTitle() {
 
-    const [notes, setNotes] = useContext(NoteContext);
+    const { noteState, handlers} = useContext(NoteContext);
+    const [notes, setNotes] = noteState;
+
     const activeBlock = notes.activeBlock;
     
     let elementRef = useRef();
@@ -23,7 +25,7 @@ function NoteTitle({ handlers }) {
         switch (event.key) {
             case 'Enter':
                 payload = keyDownEnter(element, event);           
-                handlers.newRowHandler(0, payload);                    break;
+                handlers.newLineHandler(0, payload);                    break;
             case 'ArrowRight':
                 dir = keyDownArrow(element, 'next');
                 if (dir === null) break;
