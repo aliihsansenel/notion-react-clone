@@ -31,7 +31,6 @@ function NoteBlock({ id }) {
     }
     function newLineHandler(payload) {
         if (activeBlock.blockId !== id) return;
-        console.log('blockId', id);
         handlers.newLineHandler(id, payload);
     }
     function indentationHandler(dir) {

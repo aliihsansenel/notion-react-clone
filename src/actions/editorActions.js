@@ -29,6 +29,33 @@ export function blockSelfFocus(notes, blockId) {
 }
 
 // TODO comment
+export function focusPreviousBlock(notes, blockId) {
+    const prev = previousBlock(notes, blockId);
+    if (prev === null) return notes;
+
+    return { ...notes,
+        'activeBlock': {...notes.activeBlock,
+            blockId: prev.id,
+            selfFocus: false,
+            pos: false,
+            payload: null 
+    } };
+}
+// TODO comment
+export function focusNextBlock(notes, blockId) {
+    const next = nextBlock(notes, blockId);
+    if (next === null) return notes;
+
+    return { ...notes,
+        'activeBlock': {...notes.activeBlock,
+            blockId: next.id,
+            selfFocus: false,
+            pos: true,
+            payload: null 
+    } };
+}
+
+// TODO comment
 export function addBlockAfter(notes, blockId, payload) {
 
     const blocks = {...notes.blocks};
@@ -164,36 +191,4 @@ export function nextBlock(notes, blockId) {
 
     if (index > bodyBlocks.length - 1) return null;
     return notes.blocks[bodyBlocks[index]];
-}
-
-// TODO comment.
-export function adjacentSiblings(notes, blockId) {
-    
-    const blocks = notes.blocks;
-    
-    const adjacents = { previousSibling: null, nextSibling: null };
-    const siblings = siblingsArray(notes, blockId);
-    const index = siblings.indexOf(blockId);
-    if (index > 0){
-        adjacents.previousSibling = blocks.byId[siblings[index - 1]];
-    }
-    
-    if (index < siblings.length - 1){
-        adjacents.nextSibling = blocks.byId[siblings[index + 1]];
-        
-    }
-    
-    return adjacents;
-}
-
-// TODO comment
-export function siblingsArray(notes, blockId) {
-    const blocks = notes.blocks;
-    const thisBlock = blocks.byId[blockId];
-
-    let siblings = notes.bodyBlocks;
-    if(thisBlock.parentId !== null)
-        siblings = blocks.byId[thisBlock.parentId].children;
-    
-    return siblings;
 }

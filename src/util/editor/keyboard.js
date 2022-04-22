@@ -15,7 +15,7 @@ export function keyDownEnter(element, event) {
 
 export function keyDownTab(element, event) {
     event.preventDefault();
-    if(event.shiftKey) return 'start';
+    if (event.shiftKey) return 'start';
     return 'end';
 }
 
@@ -33,13 +33,22 @@ export function keyDownBackspace(element, event) {
     return false;
 }
 
-
 export function keyDownArrow(element, dir) {
-    
-    if(dir === 'prev' && isCaretAtStart(element)) {
-        return dir;
-    } else if (dir === 'next' && isCaretAtEnd(element)) {
+    if ((dir === 'prev' && isCaretAtStart(element)) || ((dir === 'next' && isCaretAtEnd(element)))) {
         return dir;
     }
     return null;
+}
+
+export function keyDownSlash(event, no) {
+    event.preventDefault();
+    let span = document.createElement('span');
+    span.classList.add('picker-text');
+    span.setAttribute('no', no);
+    span.innerHTML = '/';
+
+    const range = window.getSelection().getRangeAt(0);
+    range.insertNode(span);
+    range.collapse(false);
+    return span;
 }

@@ -2,7 +2,8 @@ export function isCaretAtStart(element) {
     const sel = window.getSelection();
     if(sel.isCollapsed === false) return false;
     let node = sel.anchorNode;
-
+    
+    if(node.tagName === 'P' && sel.anchorOffset === 1 && node.textContent.length === 0) return true;
     if (node.textContent !== 0 && sel.anchorOffset !== 0) return false;
     while (element !== node) {
         if(node.previousSibling !== null) return false;
@@ -16,6 +17,7 @@ export function isCaretAtEnd(element) {
     if(sel.isCollapsed === false) return false;
     let node = sel.anchorNode;
 
+    if(node.tagName === 'P' && sel.anchorOffset === 1) return true;
     if (node.textContent !== 0 && node.textContent.length !== sel.anchorOffset) return false;
     while (element !== node) {
         if(node.nextSibling !== null) return false;

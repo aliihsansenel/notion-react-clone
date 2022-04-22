@@ -1,12 +1,17 @@
 import React, { useRef, useState, useEffect, useContext } from 'react';
 
-import { keyDownEnter, keyDownTab, keyDownBackspace, keyDownArrow } from "util/editor/keyboard";
+import { keyDownEnter, keyDownTab, keyDownBackspace, keyDownArrow, keyDownSlash } from "util/editor/keyboard";
 
+
+import { NoteContext } from 'pages/components/NoteEditor';
+import { getPickerBox } from 'util/editor/layout';
 
 function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
-    // const [html, setHtml] = useState(initialHtml);
+    const { pickerState } = useContext(NoteContext);
+    const [ picker, setPicker ] = pickerState;
+
     const elementRef = useRef();
-    
+
     function focusHandler(event) {
     }
     function keyDownHandler(event) {
@@ -17,7 +22,9 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
         switch (event.key) {
             case 'Enter':
                 payload = keyDownEnter(element, event);
-                handlers.newLineHandler(payload);                   break;
+                closeBlockPicker();   
+                handlers.newLineHandler(payload);
+                                                                    break;
             case 'Backspace':
                 payload = keyDownBackspace(element, event);
                 if (payload === false) break;
@@ -25,21 +32,49 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
             case 'Tab':
                 dir = keyDownTab(element, event);
                 if (dir === null) break;
-                // handlers.blurHandler(elementRef.current.innerHTML);
                 handlers.indentationHandler(dir);                   break;
             case 'ArrowLeft':
                 dir = keyDownArrow(element, 'prev');
                 if (dir === null) break;
                 handlers.navHandler(dir);                           break;
             case 'ArrowRight':
-                dir = keyDownArrow(element, 'prev');
+                dir = keyDownArrow(element, 'next');
                 if (dir === null) break;
                 handlers.navHandler(dir);                           break;
-            default: break;
+            case '/':
+                if (!picker.show){
+                    const pickerTextElement = keyDownSlash(event, picker.no);
+                    const box = getPickerBox(pickerTextElement);
+                    setPicker((picker) => { return {...picker, show: true, text: null, box }});
+                }
+                                                                    break;
+            default:
+                
+            break;
         }
     }
+    function keyUpHandler(event) {
+        if (picker.show) {
+            const element = elementRef.current.querySelector(`.picker-text[no="${picker.no}"]`);
+            if (element === null)
+                closeBlockPicker();
+            else
+                updatePickerText(element.innerText.substring(1));
+        }
+    }
+    
     function blurHandler() {
         handlers.blurHandler(elementRef.current.innerHTML);
+    }
+    // TODO comment
+    function closeBlockPicker() {
+        setPicker((picker) =>  { 
+            if(!picker.show)
+                return picker;
+            return {show: false, text: null, box: null, no: picker.no + 1}});
+    }
+    function updatePickerText(content) {
+        setPicker((picker) => { return {...picker, text: content }});
     }
     useEffect(() => {
         const element = elementRef.current;
@@ -52,7 +87,7 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
         const payload = activeBlock.payload;
 
         if (payload !== null) {
-            
+
             if (activeBlock.pos === true) {
                 range.collapse(true);
                 range.insertNode(payload);
@@ -81,10 +116,11 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
 
             onFocus={focusHandler}
             onKeyDown={keyDownHandler}
+            onKeyUp={keyUpHandler}
             onBlur={blurHandler}
 
             dangerouslySetInnerHTML={{__html: html}}
-            suppressContentEditableWarning
+            suppressContentEditableWarning 
         />
     )
 }

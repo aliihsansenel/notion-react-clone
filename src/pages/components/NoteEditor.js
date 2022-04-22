@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect, createContext } from 'react';
 import NoteTitle from './NoteTitle';
 import NoteBlock from './NoteBlock';
 
-import { registerContent, addBlockAfter, blockSelfFocus, indentBlock, unindentBlock, deleteBackward, adjacentSiblings } from 'actions/editorActions';
+import { registerContent, addBlockAfter, blockSelfFocus, indentBlock, unindentBlock, deleteBackward, adjacentSiblings, focusPreviousBlock, focusNextBlock } from 'actions/editorActions';
+import BlockPicker from './BlockPicker';
 
 export const NoteContext = createContext();
 
@@ -37,15 +38,32 @@ function NoteEditor() {
         },
         blockIdCounter: 3
     });
+    const [picker, setPicker] = useState({show: false, text: null, box: null, no: 0});
+
+    // TODO comment
+    function closeBlockPicker() {
+        setPicker((picker) =>  { 
+            if(!picker.show)
+                return picker;
+            return {show: false, text: null, box: null, no: picker.no + 1}});
+    }
+    function updatePickerText(content) {
+        setPicker((picker) => { return {...picker, text: content }});
+    }
+
+    // TODO comments handlers
     function blurHandler(blockId, html) {
         setNotes((notes) => {
             return registerContent(notes, blockId, html);
         });
     }
     function navHandler(blockId, dir) {
-
         if(dir === 'self')
             setNotes((notes) => { return blockSelfFocus(notes, blockId)});
+        else if (dir === 'prev')
+            setNotes((notes) => { return focusPreviousBlock(notes, blockId)});
+        else if (dir === 'next')
+            setNotes((notes) => { return focusNextBlock(notes, blockId)});
     }
     function newLineHandler(blockId, payload) {
         setNotes((notes) => {
@@ -64,15 +82,28 @@ function NoteEditor() {
         }
     }
     const handlers = { blurHandler, navHandler, newLineHandler, indentationHandler, deleteHandler };
+
+    useEffect(() => {
+        closeBlockPicker();
+        // console.info("notes.activeBlock.blockId");
+
+
+    }, [notes.activeBlock.blockId]);
+    
     return (
-        <NoteContext.Provider value={{ noteState: [notes, setNotes], handlers }}>
-            <div className='note-editor'>
+        <NoteContext.Provider value={{ 
+                noteState: [notes, setNotes], 
+                pickerState: [picker, setPicker], 
+                handlers 
+            }}>
+            <div className='note-editor' >
                 <NoteTitle />
                 {
                     notes.bodyBlocks.map((blockId) => {
                         return <NoteBlock id={blockId} key={blockId} />;
                     })
                 }
+            { picker.show && <BlockPicker text={picker.text} box={picker.box}/> }
             </div>
         </NoteContext.Provider>
     )
