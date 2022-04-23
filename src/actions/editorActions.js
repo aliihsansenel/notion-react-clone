@@ -91,7 +91,7 @@ export function indentBlock(notes, blockId) {
     const blocks = {...notes.blocks};
 
     const prev = previousBlock(notes, blockId);
-    if (prev === null) return notes;
+    if (prev.id === 0) return notes;
     
     const thisBlock = { ...blocks[blockId] };
 
@@ -154,7 +154,7 @@ export function unindentBlock(notes, blockId) {
 export function deleteBackward(notes, blockId, payload) {
     const prev = previousBlock(notes, blockId);
     if (prev === null) return notes;
-
+    
     const bodyBlocks = [...notes.bodyBlocks];
     const activeBlock = {...notes.activeBlock};
     

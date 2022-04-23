@@ -20,6 +20,7 @@
 
     padding-left: 1.5em;
     padding-right: 1.5em;
+    margin-right: 15vw;
 
     outline: none;
 }
@@ -28,22 +29,25 @@
     outline: none;
     margin-top: 4em;
 }
+
 .note-editor .note-block {
     margin: 0;
     outline: 1px solid black;
-    
+
     white-space: normal;
-    
+
 }
+
 .note-editor .block-picker {
     position: absolute;
 
     background-color: pink;
     width: 200px;
     height: 100px;
-    
+
 }
-.note-editor h1.note-title[contentEditable=true]:empty:before{
+
+.note-editor h1.note-title[contentEditable=true]:empty:before {
     content: attr(data-placeholder);
     color: rgb(156, 156, 156);
 }
@@ -61,6 +65,7 @@
 .text-line {
     margin: 0;
 }
+
 /* .note-editor .section-blocks {
     display: flex;
     flex-direction: column;

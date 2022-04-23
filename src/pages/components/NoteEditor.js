@@ -9,6 +9,11 @@ import BlockPicker from './BlockPicker';
 export const NoteContext = createContext();
 
 const initialBlocks = {
+    0: {
+        id: 0,
+        type: 'title',
+        level: 0,
+    },
     1: {
         id: 1,
         type: 'plain',
@@ -29,10 +34,9 @@ const initialBlocks = {
 
 function NoteEditor() {
     const [notes, setNotes] = useState({
-        title: '',
         blocks: {...initialBlocks},
-        blockContents: { 1: '', 2: '', 3: ''},
-        bodyBlocks: [ 1, 2, 3 ],
+        blockContents: { 0: '', 1: '', 2: '', 3: ''},
+        bodyBlocks: [ 0, 1, 2, 3 ],
         activeBlock: {
             blockId: 1, selfFocus: false, pos: true, payload: null,
         },
@@ -77,7 +81,7 @@ function NoteEditor() {
             setNotes((notes) => { return unindentBlock(notes, blockId)});
     }
     function deleteHandler(blockId, payload, dir) {
-        if (dir === 'prev' && notes.bodyBlocks[1] !== blockId) {
+        if (dir === 'prev' && notes.bodyBlocks[0] !== blockId) {
             setNotes((notes) => { return deleteBackward(notes, blockId, payload)});
         }
     }
@@ -99,7 +103,7 @@ function NoteEditor() {
             <div className='note-editor' >
                 <NoteTitle />
                 {
-                    notes.bodyBlocks.map((blockId) => {
+                    notes.bodyBlocks.slice(1).map((blockId) => {
                         return <NoteBlock id={blockId} key={blockId} />;
                     })
                 }
