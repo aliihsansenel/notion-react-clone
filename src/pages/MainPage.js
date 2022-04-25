@@ -21,20 +21,8 @@ function MainPage() {
 
 export default MainPage;
 
-{/* <div>
-                <label>Choose a browser from this list:
-                <input list="browsers" name="myBrowser" /></label>
-                <datalist id="browsers">
-                <option value="Chrome" otherValues="zyzz|lazlar"/>
-                <option value="Firefox"/>
-                <option value="Internet Explorer"/>
-                <option value="Opera"/>
-                <option value="Safari"/>
-                <option value="Microsoft Edge"/>
-                </datalist>
-            </div> */}
 {/* <Routes>
-                <Route path="tatoeba" element={<TatoebaSearchPage />} />
-                <Route path="lists" element={<MyListsBrowserPage />} />
-                <Route path="/" element={<MyListsBrowserPage />} />
-            </Routes> */}
+    <Route path="tatoeba" element={<TatoebaSearchPage />} />
+    <Route path="lists" element={<MyListsBrowserPage />} />
+    <Route path="/" element={<MyListsBrowserPage />} />
+</Routes> */}

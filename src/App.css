@@ -1,7 +1,7 @@
 * {
     box-sizing: border-box;
 }
-div#root {
+html, body, #root {
     height: 100%;
 }
 

@@ -4,7 +4,7 @@ import NoteTitle from './NoteTitle';
 import NoteBlock from './NoteBlock';
 
 import { registerContent, addBlockAfter, blockSelfFocus, indentBlock, unindentBlock, deleteBackward, adjacentSiblings, focusPreviousBlock, focusNextBlock } from 'actions/editorActions';
-import BlockPicker from './BlockPicker';
+import BlockPicker from '../../components/nodeEditor/BlockPicker';
 
 export const NoteContext = createContext();
 
