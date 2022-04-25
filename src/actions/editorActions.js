@@ -112,8 +112,6 @@ export function unindentBlock(notes, blockId) {
     if (targetLevel < 0) targetLevel = 0;
     if (targetLevel === thisBlock.level) return notes;
 
-    
-    
     let next = nextBlock(notes, blockId);
     while(next && next.level > thisBlock.level) {
         const newNext = { ...blocks[next.id] };
@@ -125,6 +123,15 @@ export function unindentBlock(notes, blockId) {
 
     thisBlock.level = targetLevel;
     return { ...notes, blocks: {...blocks, [blockId]: thisBlock }};
+}
+
+export function turnBlockInto(notes, blockId, type) {
+    const blocks = {...notes.blocks};
+
+    let block = { ...blocks[blockId] };
+    block.type = type;
+
+    return  { ...notes, blocks: {...blocks, [blockId]: block }};
 }
 
 // export function moveBlock(notes, blockId, targetBlockId, targetIndex) {

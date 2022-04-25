@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, createContext } from 'react';
 import NoteTitle from './NoteTitle';
 import NoteBlock from './NoteBlock';
 
-import { registerContent, addBlockAfter, blockSelfFocus, indentBlock, unindentBlock, deleteBackward, adjacentSiblings, focusPreviousBlock, focusNextBlock } from 'actions/editorActions';
+import { registerContent, addBlockAfter, blockSelfFocus, indentBlock, unindentBlock, turnBlockInto, deleteBackward, adjacentSiblings, focusPreviousBlock, focusNextBlock } from 'actions/editorActions';
 import BlockPicker from '../../components/nodeEditor/BlockPicker';
 
 export const NoteContext = createContext();
@@ -85,13 +85,15 @@ function NoteEditor() {
             setNotes((notes) => { return deleteBackward(notes, blockId, payload)});
         }
     }
+    function typeSelectHandler(type) {
+        console.log('type chosen.', type);
+        closeBlockPicker();
+        setNotes((notes) => { return turnBlockInto(notes, notes.activeBlock.blockId, type) });
+    }
     const handlers = { blurHandler, navHandler, newLineHandler, indentationHandler, deleteHandler };
 
     useEffect(() => {
         closeBlockPicker();
-        // console.info("notes.activeBlock.blockId");
-
-
     }, [notes.activeBlock.blockId]);
     
     return (
@@ -107,7 +109,7 @@ function NoteEditor() {
                         return <NoteBlock id={blockId} key={blockId} />;
                     })
                 }
-            { picker.show && <BlockPicker text={picker.text} box={picker.box}/> }
+            { picker.show && <BlockPicker text={picker.text} box={picker.box} handler={typeSelectHandler} /> }
             </div>
         </NoteContext.Provider>
     )
