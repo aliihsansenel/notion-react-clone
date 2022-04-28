@@ -19,3 +19,8 @@ body {
     user-select: none;
     visibility: visible;
 }
+
+.line-through {
+    text-decoration: line-through;
+    color: rgba(55, 53, 47, 0.65);
+}

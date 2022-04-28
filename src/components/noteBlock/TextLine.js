@@ -22,6 +22,7 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
         switch (event.key) {
             case 'Enter':
                 payload = keyDownEnter(element, event);
+                // console.log('pay', payload?.innerHTML);
                 closeBlockPicker();   
                 handlers.newLineHandler(payload);
                                                                     break;
@@ -120,7 +121,7 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
             onBlur={blurHandler}
 
             dangerouslySetInnerHTML={{__html: html}}
-            suppressContentEditableWarning 
+            suppressContentEditableWarning
         />
     )
 }

@@ -1,9 +1,7 @@
 import React, { useRef, useState, useEffect, useContext } from 'react';
 
-import TextLine from 'components/noteBlock/TextLine';
-
 import { NoteContext } from './NoteEditor';
-import BlockSelector from 'components/noteBlock/BlockSelector';
+import BlockSelector, { getNoteBlockStyle } from 'components/noteBlock/BlockSelector';
 import { addBlockAfter, blockSelfFocus } from 'actions/editorActions';
 
 function NoteBlock({ id }) {
@@ -40,13 +38,16 @@ function NoteBlock({ id }) {
         handlers.deleteHandler(id, payload, dir);
     }
     
+    let blockStyle = { marginLeft: `${block.level * 1.5}em` };
+    Object.assign(blockStyle, getNoteBlockStyle(block.type));
     const localHandlers = { blurHandler, focusHandler, navHandler, newLineHandler, indentationHandler, deleteHandler };
     return (
-        <div className='note-block' ref={elementRef} onFocus={focusHandler} style={{marginLeft: `${block.level * 2}em`}}>
+        <div className='note-block' ref={elementRef} onFocus={focusHandler} style={blockStyle} >
             <BlockSelector 
                 type={block.type}
                 hasFocus={activeBlock.blockId === id && activeBlock.selfFocus === false}
                 activeBlock={(activeBlock.blockId === id && notes.activeBlock) ? notes.activeBlock: null}
+                block={block}
                 html={content}
                 handlers={localHandlers} />
         </div>

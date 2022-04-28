@@ -1,3 +1,5 @@
+import { getDefaultBlock } from "components/noteBlock/blockDefaults";
+
 // TODO comment
 export function registerContent(notes, blockId, content) {
     return { ...notes,
@@ -67,11 +69,11 @@ export function addBlockAfter(notes, blockId, payload) {
     bodyBlocks.splice(index + 1, 0, newId);
     
     const thisBlock = blocks[blockId];
-    blocks[newId] = {
-        id: newId,
-        type: thisBlock.type,
-        level: thisBlock.level,
-    };
+    const newBlock = getDefaultBlock(thisBlock.type);
+        newBlock.id = newId;
+        newBlock.level = thisBlock.level;
+
+    blocks[newId] = newBlock;
     blockContents[newId] = '';
 
     const activeBlock = {...notes.activeBlock};
@@ -130,6 +132,9 @@ export function turnBlockInto(notes, blockId, type) {
 
     let block = { ...blocks[blockId] };
     block.type = type;
+
+    // if (block.checked === undefined)
+    //     block[checked] = false;
 
     return  { ...notes, blocks: {...blocks, [blockId]: block }};
 }

@@ -21,13 +21,18 @@ const initialBlocks = {
     },
     2: {
         id: 2,
-        type: 'plain',
-        level: 1,
+        type: 'h1',
+        level: 0,
     },
     3: {
         id: 3,
-        type: 'plain',
+        type: 'todo',
         level: 0,
+    },
+    4: {
+        id: 4,
+        type: 'todo',
+        level: 1,
     }
 };
 
@@ -35,12 +40,12 @@ const initialBlocks = {
 function NoteEditor() {
     const [notes, setNotes] = useState({
         blocks: {...initialBlocks},
-        blockContents: { 0: '', 1: '', 2: '', 3: ''},
-        bodyBlocks: [ 0, 1, 2, 3 ],
+        blockContents: { 0: '', 1: 'Description', 2: 'Heading 1', 3: 'Comment the code!', 4: 'Migrate to SASS!'},
+        bodyBlocks: [ 0, 1, 2, 3, 4 ],
         activeBlock: {
             blockId: 1, selfFocus: false, pos: true, payload: null,
         },
-        blockIdCounter: 3
+        blockIdCounter: 4
     });
     const [picker, setPicker] = useState({show: false, text: null, box: null, no: 0});
 
@@ -86,7 +91,6 @@ function NoteEditor() {
         }
     }
     function typeSelectHandler(type) {
-        console.log('type chosen.', type);
         closeBlockPicker();
         setNotes((notes) => { return turnBlockInto(notes, notes.activeBlock.blockId, type) });
     }
