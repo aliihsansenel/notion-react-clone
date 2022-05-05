@@ -20,13 +20,11 @@ export function keyDownTab(element, event) {
 }
 
 export function keyDownBackspace(element, event) {
-
     if (isCaretAtStart(element)) {
-
         event.preventDefault();
         const range = document.createRange();
         range.selectNodeContents(element);
-        const content = range.extractContents();
+        const content = range.cloneContents();
         if (content.textContent === '') return null;
         return content;
     }

@@ -1,4 +1,5 @@
 import { getDefaultBlock } from "components/noteBlock/blockDefaults";
+import { elementFromString, fragmentFromString } from "util/editor/text";
 
 // TODO comment
 export function registerContent(notes, blockId, content) {
@@ -6,7 +7,22 @@ export function registerContent(notes, blockId, content) {
         'blockContents': {...notes.blockContents,
             [blockId]: content
         },
-        'activeBlock': {...notes.activeBlock,
+        // 'activeBlock': {...notes.activeBlock,
+        //     pos: true,
+        //     payload: null, 
+        // }
+    };
+}
+
+// TODO comment
+export function blockFocus(notes, blockId, pos) {
+    const activeBlock = { ...notes.activeBlock };
+    
+    return { ...notes,
+        'activeBlock': {...activeBlock,
+            blockId,
+            selfFocus: true,
+            pos,
             payload: null 
     } };
 }
@@ -14,13 +30,7 @@ export function registerContent(notes, blockId, content) {
 // TODO comment
 export function blockSelfFocus(notes, blockId) {
     const activeBlock = { ...notes.activeBlock };
-    
-    if ( activeBlock.blockId === blockId )
-    return { ...notes,
-        'activeBlock': {...activeBlock,
-            payload: null
-        } };
-    
+        
     return { ...notes,
         'activeBlock': {...activeBlock,
             blockId,
@@ -58,7 +68,7 @@ export function focusNextBlock(notes, blockId) {
 }
 
 // TODO comment
-export function addBlockAfter(notes, blockId, payload) {
+export function addSameBlockAfter(notes, blockId, payload) {
 
     const blocks = {...notes.blocks};
     const bodyBlocks = [...notes.bodyBlocks];
@@ -69,7 +79,39 @@ export function addBlockAfter(notes, blockId, payload) {
     bodyBlocks.splice(index + 1, 0, newId);
     
     const thisBlock = blocks[blockId];
-    const newBlock = getDefaultBlock(thisBlock.type);
+    const sameType = ['title', 'h1', 'h2', 'h3'].includes(thisBlock.type) ? 'text' : thisBlock.type;
+    const newBlock = getDefaultBlock(sameType);
+        newBlock.id = newId;
+        newBlock.level = thisBlock.level;
+
+    blocks[newId] = newBlock;
+    blockContents[newId] = '';
+
+    const activeBlock = {...notes.activeBlock};
+    return  { ...notes, blocks, bodyBlocks, blockContents,
+        'activeBlock': {...activeBlock,
+            blockId: newId,
+            selfFocus: false,
+            pos: true,
+            payload 
+        },
+        blockIdCounter: newId
+    };
+}
+
+// TODO comment
+export function addBlockAfter(notes, blockId, payload, type) {
+
+    const blocks = {...notes.blocks};
+    const bodyBlocks = [...notes.bodyBlocks];
+    const blockContents = {...notes.blockContents};
+
+    const index = bodyBlocks.indexOf(blockId);
+    const newId = notes.blockIdCounter + 1;
+    bodyBlocks.splice(index + 1, 0, newId);
+    
+    const thisBlock = blocks[blockId];
+    const newBlock = getDefaultBlock(type);
         newBlock.id = newId;
         newBlock.level = thisBlock.level;
 
@@ -96,6 +138,8 @@ export function indentBlock(notes, blockId) {
     if (prev.id === 0) return notes;
     
     const thisBlock = { ...blocks[blockId] };
+    if(['h1', 'h2', 'h3'].includes(prev.type) && ['h1', 'h2', 'h3'].includes(thisBlock.type))
+        return notes;
 
     let targetLevel = thisBlock.level + 1;
     if (targetLevel > prev.level + 1) targetLevel = prev.level + 1;
@@ -127,14 +171,23 @@ export function unindentBlock(notes, blockId) {
     return { ...notes, blocks: {...blocks, [blockId]: thisBlock }};
 }
 
+export function removePickerText(notes, blockId, pickerNo) {
+    const content = notes.blockContents[blockId];
+
+    let temp = elementFromString(content);
+    let fragment = temp.content;
+    
+    let e = fragment.querySelector(`.picker-text[no="${pickerNo}"]`);
+    if (!e) return notes;
+    e.parentNode.removeChild(e);
+    return registerContent(notes, blockId, temp.innerHTML);
+}
+
 export function turnBlockInto(notes, blockId, type) {
     const blocks = {...notes.blocks};
 
     let block = { ...blocks[blockId] };
     block.type = type;
-
-    // if (block.checked === undefined)
-    //     block[checked] = false;
 
     return  { ...notes, blocks: {...blocks, [blockId]: block }};
 }

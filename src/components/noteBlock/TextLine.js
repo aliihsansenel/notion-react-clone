@@ -7,12 +7,13 @@ import { NoteContext } from 'pages/components/NoteEditor';
 import { getPickerBox } from 'util/editor/layout';
 
 function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
-    const { pickerState } = useContext(NoteContext);
+    const { pickerState, handlers: { pickerKeyDownHandler } } = useContext(NoteContext);
     const [ picker, setPicker ] = pickerState;
 
     const elementRef = useRef();
 
-    function focusHandler(event) {
+    function register() {
+        handlers.registrationHandler(elementRef.current.innerHTML);
     }
     function keyDownHandler(event) {
         const element = elementRef.current;
@@ -21,10 +22,14 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
 
         switch (event.key) {
             case 'Enter':
-                payload = keyDownEnter(element, event);
-                // console.log('pay', payload?.innerHTML);
-                closeBlockPicker();   
-                handlers.newLineHandler(payload);
+                if (picker.show) {
+                    event.preventDefault();
+                    pickerKeyDownHandler.current(event);
+                } else {
+                    payload = keyDownEnter(element, event);
+                    register();
+                    handlers.newLineHandler(payload);
+                }
                                                                     break;
             case 'Backspace':
                 payload = keyDownBackspace(element, event);
@@ -42,11 +47,25 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
                 dir = keyDownArrow(element, 'next');
                 if (dir === null) break;
                 handlers.navHandler(dir);                           break;
+            case 'ArrowUp':
+                if (picker.show){
+                    event.preventDefault();
+                    pickerKeyDownHandler.current(event);                    break;
+                }
+            case 'ArrowDown':
+                if (picker.show){
+                    event.preventDefault();
+                    pickerKeyDownHandler.current(event);                    
+                }                                                    break;
             case '/':
                 if (!picker.show){
                     const pickerTextElement = keyDownSlash(event, picker.no);
                     const box = getPickerBox(pickerTextElement);
-                    setPicker((picker) => { return {...picker, show: true, text: null, box }});
+                    const content = elementRef.current.textContent;
+                    const isBlockEmpty = !content || content === '/';
+                    setPicker((picker) => { 
+                        return {...picker, show: true, text: '', box, isBlockEmpty }
+                    });
                 }
                                                                     break;
             default:
@@ -65,7 +84,7 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
     }
     
     function blurHandler() {
-        handlers.blurHandler(elementRef.current.innerHTML);
+        handlers.registrationHandler(elementRef.current.innerHTML);
     }
     // TODO comment
     function closeBlockPicker() {
@@ -75,12 +94,16 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
             return {show: false, text: null, box: null, no: picker.no + 1}});
     }
     function updatePickerText(content) {
-        setPicker((picker) => { return {...picker, text: content }});
+        setPicker((picker) => { 
+            if(picker.text !== content){
+                return {...picker, text: content }
+            }
+            return picker;
+        });
     }
     useEffect(() => {
-        const element = elementRef.current;
         if (!hasFocus) return;
-
+        const element = elementRef.current;
         element.focus();
 
         const range = document.createRange();
@@ -101,13 +124,18 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
                 sel.removeAllRanges();
                 sel.addRange(range);
             }
-        } else {
+        } else if (!activeBlock.selfFocus) {
             range.collapse(activeBlock.pos);
             const sel = window.getSelection();
             sel.removeAllRanges();
             sel.addRange(range);
         }
-    }, [hasFocus]);
+        return function cleanup() {
+            if(hasFocus) {
+
+            }
+        }
+    }, [activeBlock]);
 
     return (
         <p className="text-line"
@@ -115,7 +143,6 @@ function TextLine({ html, placeholder, hasFocus, activeBlock, handlers }) {
             contentEditable
             ref={elementRef}
 
-            onFocus={focusHandler}
             onKeyDown={keyDownHandler}
             onKeyUp={keyUpHandler}
             onBlur={blurHandler}

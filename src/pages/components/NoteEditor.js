@@ -3,8 +3,9 @@ import React, { useState, useRef, useEffect, createContext } from 'react';
 import NoteTitle from './NoteTitle';
 import NoteBlock from './NoteBlock';
 
-import { registerContent, addBlockAfter, blockSelfFocus, indentBlock, unindentBlock, turnBlockInto, deleteBackward, adjacentSiblings, focusPreviousBlock, focusNextBlock } from 'actions/editorActions';
+import { registerContent, addSameBlockAfter, addBlockAfter, blockSelfFocus, indentBlock, unindentBlock, turnBlockInto, deleteBackward, adjacentSiblings, focusPreviousBlock, focusNextBlock, removePickerText } from 'actions/editorActions';
 import BlockPicker from '../../components/nodeEditor/BlockPicker';
+import { isContentEmpty } from 'util/editor/text';
 
 export const NoteContext = createContext();
 
@@ -16,7 +17,7 @@ const initialBlocks = {
     },
     1: {
         id: 1,
-        type: 'plain',
+        type: 'text',
         level: 0,
     },
     2: {
@@ -28,6 +29,7 @@ const initialBlocks = {
         id: 3,
         type: 'todo',
         level: 0,
+        checked: true
     },
     4: {
         id: 4,
@@ -40,7 +42,7 @@ const initialBlocks = {
 function NoteEditor() {
     const [notes, setNotes] = useState({
         blocks: {...initialBlocks},
-        blockContents: { 0: '', 1: 'Description', 2: 'Heading 1', 3: 'Comment the code!', 4: 'Migrate to SASS!'},
+        blockContents: { 0: '', 1: 'Simple text', 2: 'Heading 1', 3: 'Add todo and  heading blocks', 4: 'Comment the code!'},
         bodyBlocks: [ 0, 1, 2, 3, 4 ],
         activeBlock: {
             blockId: 1, selfFocus: false, pos: true, payload: null,
@@ -49,19 +51,21 @@ function NoteEditor() {
     });
     const [picker, setPicker] = useState({show: false, text: null, box: null, no: 0});
 
+    const pickerKeyDownHandler = useRef();
+
     // TODO comment
     function closeBlockPicker() {
-        setPicker((picker) =>  { 
-            if(!picker.show)
-                return picker;
-            return {show: false, text: null, box: null, no: picker.no + 1}});
+        if(picker.show)
+            setPicker((picker) =>  {
+                return {show: false, text: null, box: null, no: picker.no + 1}
+            });
     }
     function updatePickerText(content) {
         setPicker((picker) => { return {...picker, text: content }});
     }
 
     // TODO comments handlers
-    function blurHandler(blockId, html) {
+    function registrationHandler(blockId, html) {
         setNotes((notes) => {
             return registerContent(notes, blockId, html);
         });
@@ -76,7 +80,7 @@ function NoteEditor() {
     }
     function newLineHandler(blockId, payload) {
         setNotes((notes) => {
-            return addBlockAfter(notes, blockId, payload);
+            return addSameBlockAfter(notes, blockId, payload);
         });
     }
     function indentationHandler(blockId, dir){
@@ -92,9 +96,20 @@ function NoteEditor() {
     }
     function typeSelectHandler(type) {
         closeBlockPicker();
-        setNotes((notes) => { return turnBlockInto(notes, notes.activeBlock.blockId, type) });
+        setNotes((notes) => {
+            const blockId = notes.activeBlock.blockId;
+            if (picker.isBlockEmpty) {
+                notes = turnBlockInto(notes, blockId, type);
+                notes = removePickerText(notes, blockId, picker.no);
+                return notes;
+            } else {
+                notes = removePickerText(notes, blockId, picker.no);
+                notes = addBlockAfter(notes, blockId, null, type);
+                return notes = turnBlockInto(notes, notes.activeBlock.blockId, type);
+            }
+        });
     }
-    const handlers = { blurHandler, navHandler, newLineHandler, indentationHandler, deleteHandler };
+    const handlers = { registrationHandler, navHandler, newLineHandler, indentationHandler, deleteHandler, pickerKeyDownHandler };
 
     useEffect(() => {
         closeBlockPicker();
@@ -113,7 +128,8 @@ function NoteEditor() {
                         return <NoteBlock id={blockId} key={blockId} />;
                     })
                 }
-            { picker.show && <BlockPicker text={picker.text} box={picker.box} handler={typeSelectHandler} /> }
+            { picker.show && <BlockPicker text={picker.text} box={picker.box} 
+                handlers={[typeSelectHandler, pickerKeyDownHandler ]} /> }
             </div>
         </NoteContext.Provider>
     )
